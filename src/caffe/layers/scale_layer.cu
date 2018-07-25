@@ -28,37 +28,40 @@ __global__ void ScaleBiasForward(const int n, const Dtype* in,
 
 template <typename Dtype>
 void ScaleLayer<Dtype>::Forward_gpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) 
+{
   const int count = top[0]->count();
-
   const Dtype* bottom_data = bottom[0]->gpu_data();
-
-  LOG(INFO)<<"  "<<"";
+  LOG(INFO)<<"正向  bottom[0] == top[0]"<<bottom[0] == top[0];
   if (bottom[0] == top[0]) 
   {
-    // in-place computation; need to store bottom data before overwriting it.
-    // Note that this is only necessary for Backward; we could skip this if not
-    // doing Backward, but Caffe currently provides no way of knowing whether
-    // we'll need to do Backward at the time of the Forward call.
+    //  in-place computation; need to store bottom data before overwriting it.
+    //  Note that this is only necessary for Backward; we could skip this if not
+    //  doing Backward, but Caffe currently provides no way of knowing whether
+    //  we'll need to do Backward at the time of the Forward call.
     //  拷贝到零时空间
+    //  
     caffe_copy(bottom[0]->count(), bottom[0]->gpu_data(),
                temp_.mutable_gpu_data());
   }
+  LOG(INFO)<<"bottom.size()"<<bottom.size();
   const Dtype* scale_data =
       ((bottom.size() > 1) ? bottom[1] : this->blobs_[0].get())->gpu_data();
-
   Dtype* top_data = top[0]->mutable_gpu_data();
-  LOG(INFO)<<"  "<<"";
+  LOG(INFO)<<" bias_layer_ "<<bias_layer_==NULL;
   if (bias_layer_) 
   {
-    const Dtype* bias_data = this->blobs_[bias_param_id_]->gpu_data();
-    ScaleBiasForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
+     //  具有---骗纸项
+     const Dtype* bias_data = this->blobs_[bias_param_id_]->gpu_data();
+     //  按照通道进行相称加上偏执
+     ScaleBiasForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, scale_data, bias_data, scale_dim_, inner_dim_,
         top_data);
   }
   else 
   {
+    //   不加上---偏执
     ScaleForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, scale_data, scale_dim_, inner_dim_, top_data);
@@ -112,6 +115,9 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         (in_place ? temp_.mutable_gpu_data() : bottom[0]->mutable_gpu_diff()));
     //  top[0]->count=
     LOG(INFO)<<"top[0]->count()"<<top[0]->count();
+    //   采用按照elem-wise 进行乘法
+    //   top[0]->count() 3211264  ==N*C*H*W
+    //   得到得到每一个
     caffe_gpu_mul(top[0]->count(), top_diff, bottom_data, product);
     if (!is_eltwise) 
      {
@@ -122,7 +128,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       { 
         sum_result = product;
       } 
-      else if (sum_result_.count() == 1)  //65536
+      else if (sum_result_.count() == 1)  //65536==N*C 也就是说sum-result等于多个样本多个通道的和值
       {
        
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
@@ -146,13 +152,21 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       else 
       {
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
-       //   outer_dim_ == 32 
-       //   sum_result= sum_result_.mutable_gpu_data()
-       // 
+        //    outer_dim_ == 32 
+        //    sum_result= sum_result_.mutable_gpu_data()
+        //    N*C
+        //    65536
         LOG(INFO)<<"sum_result_.count()   AAAAA"<<sum_result_.count();
+        //    49
         LOG(INFO)<<"inner_dim_   AAAAA"<<inner_dim_;
+        // sum_result_.mutable_gpu_data()
         sum_result = (outer_dim_ == 1) ?
             scale->mutable_gpu_diff() : sum_result_.mutable_gpu_data();
+        //  product  等于原本的TOP【0】
+        //  sum_mult=H*C *1 表示所有的通道的和值
+        //  得到结果为  sum_result=N*C  
+        //  记录每一个样本每一个通道的和值
+        //  得到每一个通道的相对于 scale的梯度的累加。
         caffe_gpu_gemv(CblasNoTrans, sum_result_.count(), inner_dim_,
                        Dtype(1), product, sum_mult, Dtype(0), sum_result);
       }
@@ -160,6 +174,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       {
         LOG(INFO)<<"进入这里";
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
+        // 2048  表示通道的个数。每一个通道具有一个值
         LOG(INFO)<<"scale_dim"<<scale_dim_;
         if (scale_dim_ == 1) 
         {
@@ -177,7 +192,9 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         } 
         else 
         {
+           // 获得 scale  diff 的值
           Dtype* scale_diff = scale->mutable_gpu_diff();
+           //  讲多个通道多个样本的梯度进行累加。
           caffe_gpu_gemv(CblasTrans, outer_dim_, scale_dim_,
                          Dtype(1), sum_result, sum_mult, Dtype(scale_param),
                          scale_diff);
@@ -186,12 +203,18 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     }
   }
   LOG(INFO)<<"propagate_down[0]"<<propagate_down[0];
+  //  1
   if (propagate_down[0]) 
   {
+    //  N*C*H*W
     const int count = top[0]->count();
+
     const Dtype* top_diff = top[0]->gpu_diff();
+    //  c*1
     const Dtype* scale_data = scale->gpu_data();
+    //  
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
+    //  对应位置乘以 scale 因子就可以了。
     ScaleForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, scale_data, scale_dim_, inner_dim_, bottom_diff);
