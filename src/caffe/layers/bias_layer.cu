@@ -51,8 +51,8 @@ void BiasLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   // in-place, we don't need to do anything with the data diff.
   //  明白是的。
   const bool bias_param = (bottom.size() == 1);
-  log(INFO)<<"propagate_down[1]"<<propagate_down[1];
-  log(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
+  LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
+  LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
   if ((!bias_param && propagate_down[1]) ||
       (bias_param && this->param_propagate_down_[0])) 
    {
