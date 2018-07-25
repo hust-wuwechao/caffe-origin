@@ -31,7 +31,9 @@ void ScaleLayer<Dtype>::Forward_gpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   const int count = top[0]->count();
   const Dtype* bottom_data = bottom[0]->gpu_data();
-  if (bottom[0] == top[0]) {
+  LOG(INFO)<<"  "<<"";
+  if (bottom[0] == top[0]) 
+  {
     // in-place computation; need to store bottom data before overwriting it.
     // Note that this is only necessary for Backward; we could skip this if not
     // doing Backward, but Caffe currently provides no way of knowing whether
@@ -42,13 +44,17 @@ void ScaleLayer<Dtype>::Forward_gpu(
   const Dtype* scale_data =
       ((bottom.size() > 1) ? bottom[1] : this->blobs_[0].get())->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
-  if (bias_layer_) {
+  LOG(INFO)<<"  "<<"";
+  if (bias_layer_) 
+  {
     const Dtype* bias_data = this->blobs_[bias_param_id_]->gpu_data();
     ScaleBiasForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, scale_data, bias_data, scale_dim_, inner_dim_,
         top_data);
-  } else {
+  }
+  else 
+  {
     ScaleForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, scale_data, scale_dim_, inner_dim_, top_data);
@@ -62,44 +68,65 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       this->param_propagate_down_[this->param_propagate_down_.size() - 1]) {
     bias_layer_->Backward(top, bias_propagate_down_, bias_bottom_vec_);
   }
+   LOG(INFO)<<"inner_dim_"<<inner_dim_;
+   LOG(INFO)<<"outer_dim_"<<outer_dim_;
+  LOG(INFO)<<"bias_layer_"<<bias_layer_;
+  LOG(INFO)<<"this->param_propagate_down_[this->param_propagate_down_.size() - 1]"<<this->param_propagate_down_[this->param_propagate_down_.size() - 1];
   const bool scale_param = (bottom.size() == 1);
+  LOG(INFO)<<"scale_param"<<scale_param;
   Blob<Dtype>* scale = scale_param ? this->blobs_[0].get() : bottom[1];
+    LOG(INFO)<<"!scale_param && propagate_down[1]"<<!scale_param && propagate_down[1];
+    LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
+    LOG(INFO)<<"scale_param "<<scale_param;
+    LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
   if ((!scale_param && propagate_down[1]) ||
-      (scale_param && this->param_propagate_down_[0])) {
+      (scale_param && this->param_propagate_down_[0])) 
+    {
+    
     const Dtype* top_diff = top[0]->gpu_diff();
     const bool in_place = (bottom[0] == top[0]);
+    LOG(INFO)<<"in_place"<<in_place;
     const Dtype* bottom_data = (in_place ? &temp_ : bottom[0])->gpu_data();
-    // Hack: store big eltwise product in bottom[0] diff, except in the special
-    // case where this layer itself does the eltwise product, in which case we
-    // can store it directly in the scale diff, and we're done.
-    // If we're computing in-place (and not doing eltwise computation), this
-    // hack doesn't work and we store the product in temp_.
     const bool is_eltwise = (bottom[0]->count() == scale->count());
+    LOG(INFO)<<"is_eltwise  "<<is_eltwise;
     Dtype* product = (is_eltwise ? scale->mutable_gpu_diff() :
         (in_place ? temp_.mutable_gpu_data() : bottom[0]->mutable_gpu_diff()));
     caffe_gpu_mul(top[0]->count(), top_diff, bottom_data, product);
-    if (!is_eltwise) {
+    if (!is_eltwise) 
+     {
       Dtype* sum_result = NULL;
-      if (inner_dim_ == 1) {
+      LOG(INFO)<<"sum_result_.count()  "<<sum_result_.count();
+      if (inner_dim_ == 1) 
+      {
         sum_result = product;
-      } else if (sum_result_.count() == 1) {
+      } 
+
+      else if (sum_result_.count() == 1) {
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
         Dtype* scale_diff = scale->mutable_cpu_diff();
-        if (scale_param) {
+       
+        LOG(INFO)<<"scale_param"<<scale_param;
+        if (scale_param) 
+        {
           Dtype result;
           caffe_gpu_dot(inner_dim_, product, sum_mult, &result);
           *scale_diff += result;
-        } else {
+        }
+         else 
+        {
           caffe_gpu_dot(inner_dim_, product, sum_mult, scale_diff);
         }
-      } else {
+      } 
+      else 
+      {
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
         sum_result = (outer_dim_ == 1) ?
             scale->mutable_gpu_diff() : sum_result_.mutable_gpu_data();
         caffe_gpu_gemv(CblasNoTrans, sum_result_.count(), inner_dim_,
                        Dtype(1), product, sum_mult, Dtype(0), sum_result);
       }
-      if (outer_dim_ != 1) {
+      if (outer_dim_ != 1) 
+      {
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
         if (scale_dim_ == 1) {
           Dtype* scale_diff = scale->mutable_cpu_diff();
@@ -119,7 +146,8 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       }
     }
   }
-  if (propagate_down[0]) {
+  if (propagate_down[0]) 
+  {
     const int count = top[0]->count();
     const Dtype* top_diff = top[0]->gpu_diff();
     const Dtype* scale_data = scale->gpu_data();
