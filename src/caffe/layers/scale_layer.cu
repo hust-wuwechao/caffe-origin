@@ -32,7 +32,7 @@ void ScaleLayer<Dtype>::Forward_gpu(
 {
   const int count = top[0]->count();
   const Dtype* bottom_data = bottom[0]->gpu_data();
-  LOG(INFO)<<"正向  bottom[0] == top[0]"<<bottom[0] == top[0];
+ //  LOG(INFO)<<"正向  bottom[0] == top[0]"<<bottom[0] == top[0];
   if (bottom[0] == top[0]) 
   {
     //  in-place computation; need to store bottom data before overwriting it.
@@ -44,11 +44,11 @@ void ScaleLayer<Dtype>::Forward_gpu(
     caffe_copy(bottom[0]->count(), bottom[0]->gpu_data(),
                temp_.mutable_gpu_data());
   }
-  LOG(INFO)<<"bottom.size()"<<bottom.size();
+  // LOG(INFO)<<"bottom.size()"<<bottom.size();
   const Dtype* scale_data =
       ((bottom.size() > 1) ? bottom[1] : this->blobs_[0].get())->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
-  LOG(INFO)<<" bias_layer_ "<<bias_layer_==NULL;
+  // LOG(INFO)<<" bias_layer_ "<<bias_layer_==NULL;
   if (bias_layer_) 
   {
      //  具有---骗纸项
