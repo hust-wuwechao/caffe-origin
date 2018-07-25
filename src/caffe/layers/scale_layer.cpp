@@ -10,11 +10,15 @@ namespace caffe {
 
 template <typename Dtype>
 void ScaleLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+      const vector<Blob<Dtype>*>& top) 
+  {
   const ScaleParameter& param = this->layer_param_.scale_param();
-  if (bottom.size() == 1 && this->blobs_.size() > 0) {
+  if (bottom.size() == 1 && this->blobs_.size() > 0) 
+  {
     LOG(INFO) << "Skipping parameter initialization";
-  } else if (bottom.size() == 1) {
+  } 
+  else if (bottom.size() == 1) 
+  {
     // scale is a learned parameter; initialize it
     axis_ = bottom[0]->CanonicalAxisIndex(param.axis());
     const int num_axes = param.num_axes();
@@ -41,14 +45,20 @@ void ScaleLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     shared_ptr<Filler<Dtype> > filler(GetFiller<Dtype>(filler_param));
     filler->Fill(this->blobs_[0].get());
   }
-  if (param.bias_term()) {
+
+
+  if (param.bias_term()) 
+  {
     LayerParameter layer_param(this->layer_param_);
     layer_param.set_type("Bias");
     BiasParameter* bias_param = layer_param.mutable_bias_param();
     bias_param->set_axis(param.axis());
-    if (bottom.size() > 1) {
+    if (bottom.size() > 1)
+    {
       bias_param->set_num_axes(bottom[1]->num_axes());
-    } else {
+    } 
+    else 
+    {
       bias_param->set_num_axes(param.num_axes());
     }
     bias_param->mutable_filler()->CopyFrom(param.bias_filler());
@@ -143,24 +153,38 @@ void ScaleLayer<Dtype>::Forward_cpu(
 
 template <typename Dtype>
 void ScaleLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  if (bias_layer_ &&
-      this->param_propagate_down_[this->param_propagate_down_.size() - 1]) {
+    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) 
+{
+  // 先进行blas 层进行反向。
+  if (bias_layer_ &&this->param_propagate_down_[this->param_propagate_down_.size() - 1]) {
     bias_layer_->Backward(top, bias_propagate_down_, bias_bottom_vec_);
   }
+         /*  LOG(INFO)<<"inner_dim_"<<inner_dim_;
+          LOG(INFO)<<"sum_result_.count()"<<sum_result_.count();
+         
+          LOG(INFO)<<"outer_dim_"<<outer_dim_;
+          LOG(INFO)<<"bottom.size()"<<bottom.size();
+          LOG(INFO)<<"bottom[0]"<<bottom[1]->shape_string(); */
   const bool scale_param = (bottom.size() == 1);
+  LOG(INFO)<<"scale_param"<<scale_param;   
   Blob<Dtype>* scale = scale_param ? this->blobs_[0].get() : bottom[1];
-  if ((!scale_param && propagate_down[1]) ||
-      (scale_param && this->param_propagate_down_[0])) {
+  // 不存在scale参数
+
+  // 
+  if ((!scale_param && propagate_down[1]) ||(scale_param && this->param_propagate_down_[0])) 
+  {
+    LOG(INFO)<<"!scale_param && propagate_down[1]"<<!scale_param && propagate_down[1];
+    LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
+    LOG(INFO)<<"scale_param "<<scale_param;
+    LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
+    //LOG(INFO)<<"!scale_param && propagate_down[1]"<<!scale_param && propagate_down[1];
+    
     const Dtype* top_diff = top[0]->cpu_diff();
     const bool in_place = (bottom[0] == top[0]);
+    LOG(INFO)<<"in_place"<<in_place;
     const Dtype* bottom_data = (in_place ? &temp_ : bottom[0])->cpu_data();
-    // Hack: store big eltwise product in bottom[0] diff, except in the special
-    // case where this layer itself does the eltwise product, in which case we
-    // can store it directly in the scale diff, and we're done.
-    // If we're computing in-place (and not doing eltwise computation), this
-    // hack doesn't work and we store the product in temp_.
     const bool is_eltwise = (bottom[0]->count() == scale->count());
+    LOG(INFO)<<" is_eltwise"<< is_eltwise;
     Dtype* product = (is_eltwise ? scale->mutable_cpu_diff() :
         (in_place ? temp_.mutable_cpu_data() : bottom[0]->mutable_cpu_diff()));
     caffe_mul(top[0]->count(), top_diff, bottom_data, product);
@@ -205,9 +229,13 @@ void ScaleLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (propagate_down[0]) {
     const Dtype* top_diff = top[0]->cpu_diff();
     const Dtype* scale_data = scale->cpu_data();
+    LOG(INFO)<<"outer_dim_"<<outer_dim_;
+    LOG(INFO)<<"scale_dim_"<<scale_dim_;
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
-    for (int n = 0; n < outer_dim_; ++n) {
-      for (int d = 0; d < scale_dim_; ++d) {
+    for (int n = 0; n < outer_dim_; ++n) 
+    {
+      for (int d = 0; d < scale_dim_; ++d) 
+      {
         const Dtype factor = scale_data[d];
         caffe_cpu_scale(inner_dim_, factor, top_diff, bottom_diff);
         bottom_diff += inner_dim_;
