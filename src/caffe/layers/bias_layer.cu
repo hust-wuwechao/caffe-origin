@@ -9,9 +9,12 @@ namespace caffe {
 template <typename Dtype>
 __global__ void BiasForward(const int n, const Dtype* in,
     const Dtype* bias, const int bias_dim, const int inner_dim,
-    Dtype* out) {
+    Dtype* out) 
+{
   CUDA_KERNEL_LOOP(index, n) 
   {
+    //  index / inner_dim  得到对应的第几个通道 总的所用样本
+    //  % bias_dim  得到真正的通道号码。
     const int bias_index = (index / inner_dim) % bias_dim;
     out[index] = in[index] + bias[bias_index];
   }
@@ -28,8 +31,10 @@ void BiasLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       ((bottom.size() > 1) ? bottom[1] : this->blobs_[0].get())->gpu_data();
   // LOG(INFO)<<"bias_data"<<bias_data->shape_string();
   Dtype* top_data = top[0]->mutable_gpu_data();
-  BiasForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
-      <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+  //  这里面进行发现他的数据是不是最优化的。
+  BiasForward<Dtype>   // NOLINT_NEXT_LINE(whitespace/operators)
+      <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>
+      (
       count, bottom_data, bias_data, bias_dim_, inner_dim_, top_data);
 }
 
@@ -53,7 +58,7 @@ void BiasLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   //  明白是的。
   const bool bias_param = (bottom.size() == 1);
   //propagate_down[1]=0  
-  //  this->param_propagate_down_[0=1
+  //  this->param_propagate_down_[0】=1
   LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
   LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
   if ((!bias_param && propagate_down[1]) ||
@@ -65,11 +70,13 @@ void BiasLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         ->mutable_gpu_diff();
     bool accum = bias_param;
     //  32 个样本
+    //  blas d的维度和通道的数目是一样的
     LOG(INFO)<<"bias_dim_"<<bias_dim_;
+    //  dim  ==N*H* W=100352
      LOG(INFO)<<"dim_"<<dim_;
     for (int n = 0; n < outer_dim_; ++n) 
     {
-      //  
+      //  采用了 c*H*W  与  H*W  进乘法 bias_multiplier_=全部为1 
       caffe_gpu_gemv(CblasNoTrans, bias_dim_, inner_dim_, Dtype(1),
           top_diff, bias_multiplier_.gpu_data(), Dtype(accum), bias_diff);
       top_diff += dim_;

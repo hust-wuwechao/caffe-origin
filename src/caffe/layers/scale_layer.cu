@@ -33,6 +33,7 @@ void ScaleLayer<Dtype>::Forward_gpu(
   const int count = top[0]->count();
   const Dtype* bottom_data = bottom[0]->gpu_data();
  //  LOG(INFO)<<"正向  bottom[0] == top[0]"<<bottom[0] == top[0];
+  //  假设输入为  32*2048*7*7
   if (bottom[0] == top[0]) 
   {
     //  in-place computation; need to store bottom data before overwriting it.

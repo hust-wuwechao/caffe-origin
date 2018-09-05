@@ -87,24 +87,31 @@ static BrewFunction GetBrewFunction(const caffe::string& name) {
 }
 
 // Parse GPU ids or use all available devices
-static void get_gpus(vector<int>* gpus) {
-  if (FLAGS_gpu == "all") {
+static void get_gpus(vector<int>* gpus) 
+{
+   if (FLAGS_gpu == "all") 
+   {
     int count = 0;
-#ifndef CPU_ONLY
+   #ifndef CPU_ONLY
     CUDA_CHECK(cudaGetDeviceCount(&count));
-#else
+    #else
     NO_GPU;
 #endif
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) 
+    {
       gpus->push_back(i);
     }
-  } else if (FLAGS_gpu.size()) {
+  } else if (FLAGS_gpu.size()) 
+  {
     vector<string> strings;
     boost::split(strings, FLAGS_gpu, boost::is_any_of(","));
-    for (int i = 0; i < strings.size(); ++i) {
+    for (int i = 0; i < strings.size(); ++i) 
+    {
       gpus->push_back(boost::lexical_cast<int>(strings[i]));
     }
-  } else {
+  }
+   else 
+   {
     CHECK_EQ(gpus->size(), 0);
   }
 }
@@ -164,7 +171,8 @@ caffe::SolverAction::Enum GetRequestedAction(
 }
 
 // Train / Finetune a model.
-int train() {
+int train() 
+{
   CHECK_GT(FLAGS_solver.size(), 0) << "Need a solver definition to train.";
   CHECK(!FLAGS_snapshot.size() || !FLAGS_weights.size())
       << "Give a snapshot to resume training or weights to finetune "
@@ -175,7 +183,8 @@ int train() {
   caffe::ReadSolverParamsFromTextFileOrDie(FLAGS_solver, &solver_param);
 
   solver_param.mutable_train_state()->set_level(FLAGS_level);
-  for (int i = 0; i < stages.size(); i++) {
+  for (int i = 0; i < stages.size(); i++) 
+  {
     solver_param.mutable_train_state()->add_stage(stages[i]);
   }
 
