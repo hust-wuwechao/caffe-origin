@@ -43,9 +43,9 @@ void BiasLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)
   {
   // propagate_down[0]=0  数据不需要反向 
-  LOG(INFO)<<"进入blas  反向 propagate_down[0]"<<propagate_down[0];
+  //LOG(INFO)<<"进入blas  反向 propagate_down[0]"<<propagate_down[0];
   //  2这应该相等的，按照
-  LOG(INFO)<<"bottom[0] != top[0]"<<bottom[0] != top[0];
+  //LOG(INFO)<<"bottom[0] != top[0]"<<bottom[0] != top[0];
   
   if (propagate_down[0] && bottom[0] != top[0]) 
   {
@@ -59,21 +59,21 @@ void BiasLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   const bool bias_param = (bottom.size() == 1);
   //propagate_down[1]=0  
   //  this->param_propagate_down_[0】=1
-  LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
-  LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
+  //LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
+  //LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
   if ((!bias_param && propagate_down[1]) ||
       (bias_param && this->param_propagate_down_[0])) 
    {
-    LOG(INFO)<<"bias_param"<<bias_param;
+    //LOG(INFO)<<"bias_param"<<bias_param;
     const Dtype* top_diff = top[0]->gpu_diff();
     Dtype* bias_diff = (bias_param ? this->blobs_[0].get() : bottom[1])
         ->mutable_gpu_diff();
     bool accum = bias_param;
     //  32 个样本
     //  blas d的维度和通道的数目是一样的
-    LOG(INFO)<<"bias_dim_"<<bias_dim_;
+    //LOG(INFO)<<"bias_dim_"<<bias_dim_;
     //  dim  ==N*H* W=100352
-     LOG(INFO)<<"dim_"<<dim_;
+    // LOG(INFO)<<"dim_"<<dim_;
     for (int n = 0; n < outer_dim_; ++n) 
     {
       //  采用了 c*H*W  与  H*W  进乘法 bias_multiplier_=全部为1 

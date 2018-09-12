@@ -17,7 +17,7 @@ void BatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   if (bottom[0] != top[0]) {
     caffe_copy(bottom[0]->count(), bottom_data, top_data);
   }
-  LOG(INFO)<<"use_global_stats_  "<<use_global_stats_;
+  //LOG(INFO)<<"use_global_stats_  "<<use_global_stats_;
   if (use_global_stats_) 
   {
     // 有没有使用全局？

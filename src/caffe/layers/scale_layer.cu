@@ -96,7 +96,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   //   0   
    // LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
   //   1
-    LOG(INFO)<<"scale_param "<<scale_param;
+    //LOG(INFO)<<"scale_param "<<scale_param;
   //   1
     //LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
   //  满足1
@@ -121,7 +121,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     Dtype* product = (is_eltwise ? scale->mutable_gpu_diff() :
         (in_place ? temp_.mutable_gpu_data() : bottom[0]->mutable_gpu_diff()));
     //  top[0]->count=
-    LOG(INFO)<<"top[0]->count()"<<top[0]->count();
+     // LOG(INFO)<<"top[0]->count()"<<top[0]->count();
     //   采用按照elem-wise 进行乘法
     //   top[0]->count() 3211264  ==N*C*H*W
     //   得到得到每一个
@@ -130,7 +130,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
      {
       //  
       Dtype* sum_result = NULL;
-      LOG(INFO)<<"sum_result_.count()  "<<sum_result_.count();
+      //LOG(INFO)<<"sum_result_.count()  "<<sum_result_.count();
       if (inner_dim_ == 1) 
       { 
         sum_result = product;
@@ -141,7 +141,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
         //  获得 scale值得梯度，和通道的数目应该是一样的，也就是，2048
         Dtype* scale_diff = scale->mutable_cpu_diff();
-        LOG(INFO)<<"scale_param"<<scale_param;
+        //LOG(INFO)<<"scale_param"<<scale_param;
         if (scale_param) 
         {
           //  存在scale 参数
@@ -163,9 +163,9 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         //    sum_result= sum_result_.mutable_gpu_data()
         //    N*C
         //    65536
-        LOG(INFO)<<"sum_result_.count()   AAAAA"<<sum_result_.count();
+        //LOG(INFO)<<"sum_result_.count()   AAAAA"<<sum_result_.count();
         //    49
-        LOG(INFO)<<"inner_dim_   AAAAA"<<inner_dim_;
+        //LOG(INFO)<<"inner_dim_   AAAAA"<<inner_dim_;
         // sum_result_.mutable_gpu_data()
         sum_result = (outer_dim_ == 1) ?
             scale->mutable_gpu_diff() : sum_result_.mutable_gpu_data();
@@ -183,7 +183,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         //LOG(INFO)<<"进入这里";
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
         // 2048  表示通道的个数。每一个通道具有一个值
-        LOG(INFO)<<"scale_dim"<<scale_dim_;
+        //LOG(INFO)<<"scale_dim"<<scale_dim_;
         if (scale_dim_ == 1) 
         {
           Dtype* scale_diff = scale->mutable_cpu_diff();
@@ -213,7 +213,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       }
     }
   }
-  LOG(INFO)<<"propagate_down[0]"<<propagate_down[0];
+  //LOG(INFO)<<"propagate_down[0]"<<propagate_down[0];
   //  1
   if (propagate_down[0]) 
   {
