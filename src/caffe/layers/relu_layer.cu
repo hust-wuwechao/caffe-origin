@@ -34,7 +34,8 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 __global__ void ReLUBackward(const int n, const Dtype* in_diff,
     const Dtype* in_data, Dtype* out_diff, Dtype negative_slope) {
-  CUDA_KERNEL_LOOP(index, n) {
+  CUDA_KERNEL_LOOP(index, n) 
+  {
     out_diff[index] = in_diff[index] * ((in_data[index] > 0)
         + (in_data[index] <= 0) * negative_slope);
   }

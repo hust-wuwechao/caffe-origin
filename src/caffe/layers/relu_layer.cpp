@@ -7,12 +7,16 @@ namespace caffe {
 
 template <typename Dtype>
 void ReLULayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<Dtype>*>& top) 
+ {
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   const int count = bottom[0]->count();
   Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
-  for (int i = 0; i < count; ++i) {
+  for (int i = 0; i < count; ++i) 
+  { 
+    // 大于零时，梯度为原来的值   梯度为1
+    // 小于零时，为negative_slope*  剃度为negative_slope
     top_data[i] = std::max(bottom_data[i], Dtype(0))
         + negative_slope * std::min(bottom_data[i], Dtype(0));
   }
@@ -28,7 +32,8 @@ void ReLULayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
     const int count = bottom[0]->count();
     Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) 
+    {
       bottom_diff[i] = top_diff[i] * ((bottom_data[i] > 0)
           + negative_slope * (bottom_data[i] <= 0));
     }

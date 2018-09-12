@@ -227,8 +227,15 @@ void Solver<Dtype>::Step(int iters) {
     net_->set_debug_info(display && param_.debug_info());
     // accumulate the loss and gradient
     Dtype loss = 0;
-    for (int i = 0; i < param_.iter_size(); ++i) {
+    for (int i = 0; i < param_.iter_size(); ++i) 
+    {
+
+      Timer iter_timer;
+      iter_timer.Start();
       loss += net_->ForwardBackward();
+      LOG(INFO) << "Iteration: " << i << " forward-backward time: "
+      << iter_timer.MilliSeconds() << " ms.";
+
     }
     loss /= param_.iter_size();
     // average the loss across iterations for smoothed reporting

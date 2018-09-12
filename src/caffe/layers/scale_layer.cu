@@ -10,7 +10,8 @@ template <typename Dtype>
 __global__ void ScaleForward(const int n, const Dtype* in,
     const Dtype* scale, const int scale_dim, const int inner_dim,
     Dtype* out) {
-  CUDA_KERNEL_LOOP(index, n) {
+  CUDA_KERNEL_LOOP(index, n) 
+  {
     const int scale_index = (index / inner_dim) % scale_dim;
     out[index] = in[index] * scale[scale_index];
   }
@@ -20,8 +21,10 @@ template <typename Dtype>
 __global__ void ScaleBiasForward(const int n, const Dtype* in,
     const Dtype* scale, const Dtype* bias,
     const int scale_dim, const int inner_dim, Dtype* out) {
-  CUDA_KERNEL_LOOP(index, n) {
+  CUDA_KERNEL_LOOP(index, n) 
+  {
     const int scale_index = (index / inner_dim) % scale_dim;
+    // 这里面再次很明确的说明，
     out[index] = in[index] * scale[scale_index] + bias[scale_index];
   }
 }
@@ -46,13 +49,13 @@ void ScaleLayer<Dtype>::Forward_gpu(
                temp_.mutable_gpu_data());
   }
   // LOG(INFO)<<"bottom.size()"<<bottom.size();
+
   const Dtype* scale_data =
       ((bottom.size() > 1) ? bottom[1] : this->blobs_[0].get())->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   // LOG(INFO)<<" bias_layer_ "<<bias_layer_==NULL;
   if (bias_layer_) 
   {
-     //  具有---骗纸项
      const Dtype* bias_data = this->blobs_[bias_param_id_]->gpu_data();
      //  按照通道进行相称加上偏执
      ScaleBiasForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
@@ -79,39 +82,42 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     bias_layer_->Backward(top, bias_propagate_down_, bias_bottom_vec_);
   }
   // 假设输入为  32 2048 7 7 (3211264)
-  LOG(INFO)<<"inner_dim_"<<inner_dim_;    //    49
-  LOG(INFO)<<"outer_dim_"<<outer_dim_;    //    32
-  LOG(INFO)<<"bias_layer_"<<bias_layer_;  //    1
+  //LOG(INFO)<<"inner_dim_"<<inner_dim_;    //    49
+  //LOG(INFO)<<"outer_dim_"<<outer_dim_;    //    32
+  //LOG(INFO)<<"bias_layer_"<<bias_layer_;  //    1
   //     1 
-  LOG(INFO)<<"this->param_propagate_down_[this->param_propagate_down_.size() - 1]"<<this->param_propagate_down_[this->param_propagate_down_.size() - 1];
+  //LOG(INFO)<<"this->param_propagate_down_[this->param_propagate_down_.size() - 1]"<<this->param_propagate_down_[this->param_propagate_down_.size() - 1];
   const bool scale_param = (bottom.size() == 1);
   //    1  具有 scale参数
-  LOG(INFO)<<"scale_param"<<scale_param;
+  //    LOG(INFO)<<"scale_param"<<scale_param;
   Blob<Dtype>* scale = scale_param ? this->blobs_[0].get() : bottom[1];
-  //   0
-    LOG(INFO)<<"!scale_param && propagate_down[1]"<<!scale_param && propagate_down[1];
+  //    0
+  //  LOG(INFO)<<"!scale_param && propagate_down[1]"<<!scale_param && propagate_down[1];
   //   0   
-    LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
+   // LOG(INFO)<<"propagate_down[1]"<<propagate_down[1];
   //   1
     LOG(INFO)<<"scale_param "<<scale_param;
   //   1
-    LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
+    //LOG(INFO)<<"this->param_propagate_down_[0]"<<this->param_propagate_down_[0];
   //  满足1
+  //  参数需要被反向传递？是的。
   if ((!scale_param && propagate_down[1]) ||
       (scale_param && this->param_propagate_down_[0])) 
     {    
     const Dtype* top_diff = top[0]->gpu_diff();
     const bool in_place = (bottom[0] == top[0]);
     // 1 满足是原地操作
-    LOG(INFO)<<"in_place"<<in_place;
+    //LOG(INFO)<<"in_place"<<in_place;
     //  从temp里面获取内容
     const Dtype* bottom_data = (in_place ? &temp_ : bottom[0])->gpu_data();
     // 
-    LOG(INFO)<<"bottom[0]->count()   "<<bottom[0]->count();
+    //LOG(INFO)<<"bottom[0]->count()   "<<bottom[0]->count();
+    // 通道的数目和总的样本个数自然不一样。
     const bool is_eltwise = (bottom[0]->count() == scale->count());
     //  0
-    LOG(INFO)<<"is_eltwise  "<<is_eltwise;
+    //LOG(INFO)<<"is_eltwise  "<<is_eltwise;
     //  积德数值为  temp_.mutable_gpu_data()
+    //  也即是原来的值
     Dtype* product = (is_eltwise ? scale->mutable_gpu_diff() :
         (in_place ? temp_.mutable_gpu_data() : bottom[0]->mutable_gpu_diff()));
     //  top[0]->count=
@@ -168,12 +174,13 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         //  得到结果为  sum_result=N*C  
         //  记录每一个样本每一个通道的和值
         //  得到每一个通道的相对于 scale的梯度的累加。
+        //  (N*C)*(H*W)    (H*W)*1    sum_mult 应该等于1的H*W的向量 吧
         caffe_gpu_gemv(CblasNoTrans, sum_result_.count(), inner_dim_,
                        Dtype(1), product, sum_mult, Dtype(0), sum_result);
       }
       if (outer_dim_ != 1) 
       {
-        LOG(INFO)<<"进入这里";
+        //LOG(INFO)<<"进入这里";
         const Dtype* sum_mult = sum_multiplier_.gpu_data();
         // 2048  表示通道的个数。每一个通道具有一个值
         LOG(INFO)<<"scale_dim"<<scale_dim_;
@@ -193,9 +200,12 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         } 
         else 
         {
+           //  scale 值来自哪里？
            // 获得 scale  diff 的值
           Dtype* scale_diff = scale->mutable_gpu_diff();
-           //  讲多个通道多个样本的梯度进行累加。
+           //   讲多个通道多个样本的梯度进行累加。
+           //   最终得到scale的diff 的值，
+           //   也就是说，在scale里面并没有去使用
           caffe_gpu_gemv(CblasTrans, outer_dim_, scale_dim_,
                          Dtype(1), sum_result, sum_mult, Dtype(scale_param),
                          scale_diff);
@@ -209,13 +219,13 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   {
     //  N*C*H*W
     const int count = top[0]->count();
-
     const Dtype* top_diff = top[0]->gpu_diff();
     //  c*1
     const Dtype* scale_data = scale->gpu_data();
     //  
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
     //  对应位置乘以 scale 因子就可以了。
+    //  这里面很明确的
     ScaleForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, scale_data, scale_dim_, inner_dim_, bottom_diff);
