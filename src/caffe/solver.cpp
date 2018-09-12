@@ -205,7 +205,8 @@ void Solver<Dtype>::Step(int iters) {
   losses_.clear();
   smoothed_loss_ = 0;
   iteration_timer_.Start();
-
+  Timer total_timer;
+  total_timer.Start();
   while (iter_ < stop_iter) {
     // zero-init the params
     net_->ClearParamDiffs();
@@ -229,7 +230,7 @@ void Solver<Dtype>::Step(int iters) {
     Dtype loss = 0;
     for (int i = 0; i < param_.iter_size(); ++i) 
     {
-
+      
       Timer iter_timer;
       iter_timer.Start();
       loss += net_->ForwardBackward();
@@ -287,7 +288,15 @@ void Solver<Dtype>::Step(int iters) {
       // Break out of training loop.
       break;
     }
+    if(iter_%100==0)
+    {
+        LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /
+        (iter_*param_.iter_size())<< " ms.";
+    }
   }
+  total_timer.Stop();
+ LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /stop_iter<< " ms.";
+
 }
 
 template <typename Dtype>
