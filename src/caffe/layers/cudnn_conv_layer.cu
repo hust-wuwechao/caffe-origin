@@ -2,7 +2,19 @@
 #include <vector>
 
 #include "caffe/layers/cudnn_conv_layer.hpp"
+#include "caffe/caffe.hpp"
+#include "caffe/util/signal_handler.h"
 
+using caffe::Blob;
+using caffe::Caffe;
+using caffe::Net;
+using caffe::Layer;
+using caffe::Solver;
+using caffe::shared_ptr;
+using caffe::string;
+using caffe::Timer;
+using caffe::vector;
+using std::ostringstream;
 namespace caffe {
 
 __global__ void sync_conv_groups() { }
@@ -16,7 +28,8 @@ void CuDNNConvolutionLayer<Dtype>::Forward_gpu(
     Dtype* top_data = top[i]->mutable_gpu_data();
 
     // Forward through cuDNN in parallel over groups.
-    for (int g = 0; g < this->group_; g++) {
+    for (int g = 0; g < this->group_; g++)
+     {
       // Filters.
       CUDNN_CHECK(cudnnConvolutionForward(handle_[g],
             cudnn::dataType<Dtype>::one,
@@ -63,16 +76,24 @@ void CuDNNConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     // Backward through cuDNN in parallel over groups and gradients.
     for (int g = 0; g < this->group_; g++) {
       // Gradient w.r.t. bias.
-      if (this->bias_term_ && this->param_propagate_down_[1]) {
+      if (this->bias_term_ && this->param_propagate_down_[1]) 
+      {
+        Timer iter_timer;
+        iter_timer.Start();
         CUDNN_CHECK(cudnnConvolutionBackwardBias(handle_[0*this->group_ + g],
               cudnn::dataType<Dtype>::one,
               top_descs_[i],  top_diff + top_offset_ * g,
               cudnn::dataType<Dtype>::one,
               bias_desc_, bias_diff + bias_offset_ * g));
+        sync_conv_groups<<<1, 1>>>();
+        LOG(INFO) << " B-backward time: "<< iter_timer.MilliSeconds() << " ms."; 
       }
-
+      
       // Gradient w.r.t. weights.
-      if (this->param_propagate_down_[0]) {
+      if (this->param_propagate_down_[0]) 
+      {
+        Timer iter_timer;
+        iter_timer.Start();
         const Dtype* bottom_data = bottom[i]->gpu_data();
         CUDNN_CHECK(cudnnConvolutionBackwardFilter(
               handle_[1*this->group_ + g],
@@ -84,13 +105,20 @@ void CuDNNConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
               workspace_bwd_filter_sizes_[i],
               cudnn::dataType<Dtype>::one,
               filter_desc_, weight_diff + this->weight_offset_ * g));
+        sync_conv_groups<<<1, 1>>>();
+        LOG(INFO) << " W-backward time: "<< iter_timer.MilliSeconds() << " ms.";
       }
 
+
       // Gradient w.r.t. bottom data.
-      if (propagate_down[i]) {
-        if (weight == NULL) {
+      if (propagate_down[i]) 
+      {
+        if (weight == NULL) 
+        {
           weight = this->blobs_[0]->gpu_data();
         }
+        Timer iter_timer;
+        iter_timer.Start();
         Dtype* bottom_diff = bottom[i]->mutable_gpu_diff();
         CUDNN_CHECK(cudnnConvolutionBackwardData(
               handle_[2*this->group_ + g],
@@ -102,6 +130,8 @@ void CuDNNConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
               workspace_bwd_data_sizes_[i],
               cudnn::dataType<Dtype>::zero,
               bottom_descs_[i], bottom_diff + bottom_offset_ * g));
+        sync_conv_groups<<<1, 1>>>();
+        LOG(INFO) << " A-backward time: "<< iter_timer.MilliSeconds() << " ms.";
       }
     }
 
