@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include<cudaProfiler.h>
+#include<cuda_profiler_api.h>
 #include "boost/algorithm/string.hpp"
 #include "caffe/solver.hpp"
 #include "caffe/util/format.hpp"
