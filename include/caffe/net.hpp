@@ -82,7 +82,9 @@ class Net {
    */
   void Reshape();
 
-  Dtype ForwardBackward() {
+  Dtype ForwardBackward() 
+  {
+    
     Dtype loss;
     Forward(&loss);
     Backward();

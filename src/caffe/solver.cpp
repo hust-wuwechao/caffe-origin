@@ -207,7 +207,8 @@ void Solver<Dtype>::Step(int iters) {
   iteration_timer_.Start();
   Timer total_timer;
   total_timer.Start();
-  while (iter_ < stop_iter) {
+  while (iter_ < stop_iter)
+   {
     // zero-init the params
     net_->ClearParamDiffs();
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
@@ -231,11 +232,13 @@ void Solver<Dtype>::Step(int iters) {
     for (int i = 0; i < param_.iter_size(); ++i) 
     {
       
-      Timer iter_timer;
-      iter_timer.Start();
+     /*  Timer iter_timer;
+      iter_timer.Start(); */
+
       loss += net_->ForwardBackward();
-      LOG(INFO) << "  iter_  Iteration: "<<iter_<<"-"<<i << " forward-backward time: "
-      << iter_timer.MilliSeconds() << " ms.";
+      LOG(INFO) << "  iter_  Iteration: "<<iter_<<"-"<<i << ;
+      //" forward-backward time: "
+      //<< iter_timer.MilliSeconds() << " ms."; */
 
     }
     loss /= param_.iter_size();
@@ -247,7 +250,7 @@ void Solver<Dtype>::Step(int iters) {
       LOG_IF(INFO, Caffe::root_solver()) << "Iteration " << iter_
           << " (" << per_s << " iter/s, " << lapse << "s/"
           << param_.display() << " iters), loss = " << smoothed_loss_;
-      iteration_timer_.Start();
+     /*  iteration_timer_.Start(); */
       iterations_last_ = iter_;
       const vector<Blob<Dtype>*>& result = net_->output_blobs();
       int score_index = 0;
@@ -288,15 +291,15 @@ void Solver<Dtype>::Step(int iters) {
       // Break out of training loop.
       break;
     }
-    if(iter_%10==0)
+   /*  if(iter_%10==0)
     {
         LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /
         (iter_*param_.iter_size())<< " ms.";
-    }
+    } */
   }
-  total_timer.Stop();
+ /*  total_timer.Stop();
  LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /stop_iter<< " ms.";
-
+ */
 }
 
 template <typename Dtype>

@@ -517,10 +517,14 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);
   CHECK_LT(end, layers_.size());
   Dtype loss = 0;
-  for (int i = start; i <= end; ++i) {
-    for (int c = 0; c < before_forward_.size(); ++c) {
+  for (int i = start; i <= end; ++i) 
+  {
+    for (int c = 0; c < before_forward_.size(); ++c)
+     {
       before_forward_[c]->run(i);
     }
+    //
+    
     Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);
     loss += layer_loss;
     if (debug_info_) { ForwardDebugInfo(i); }
@@ -545,7 +549,9 @@ template <typename Dtype>
 const vector<Blob<Dtype>*>& Net<Dtype>::Forward(Dtype* loss) {
   if (loss != NULL) {
     *loss = ForwardFromTo(0, layers_.size() - 1);
-  } else {
+  }
+   else 
+  {
     ForwardFromTo(0, layers_.size() - 1);
   }
   return net_output_blobs_;
