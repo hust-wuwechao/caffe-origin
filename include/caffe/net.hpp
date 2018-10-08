@@ -11,7 +11,7 @@
 #include "caffe/common.hpp"
 #include "caffe/layer.hpp"
 #include "caffe/proto/caffe.pb.h"
-
+#include<cuda_profiler_api.h>
 namespace caffe {
 
 /**
@@ -84,10 +84,12 @@ class Net {
 
   Dtype ForwardBackward() 
   {
-    
+
     Dtype loss;
     Forward(&loss);
+    cudaProfilerStart();
     Backward();
+    cudaProfilerStop();
     return loss;
   }
 
