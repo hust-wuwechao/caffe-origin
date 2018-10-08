@@ -207,8 +207,11 @@ void Solver<Dtype>::Step(int iters) {
   iteration_timer_.Start();
   Timer total_timer;
   total_timer.Start();
+  LOG(InFO)<<"stop_iter   "<<stop_iter;
+  cudaProfilerStart();
   while (iter_ < stop_iter)
-   {
+  {
+
     // zero-init the params
     net_->ClearParamDiffs();
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
@@ -222,26 +225,28 @@ void Solver<Dtype>::Step(int iters) {
       }
     }
 
-    for (int i = 0; i < callbacks_.size(); ++i) {
+    for (int i = 0; i < callbacks_.size(); ++i) 
+    {
       callbacks_[i]->on_start();
     }
     const bool display = param_.display() && iter_ % param_.display() == 0;
     net_->set_debug_info(display && param_.debug_info());
     // accumulate the loss and gradient
     Dtype loss = 0;
-    for (int i = 0; i < param_.iter_size(); ++i) 
-    {
-      
-     /*  Timer iter_timer;
-      iter_timer.Start(); */
+    //param_.iter_size() 一般等于0
+      for (int i = 0; i < param_.iter_size(); ++i) 
+      {
+        
+      /*  Timer iter_timer;
+        iter_timer.Start(); */
+        
+        loss += net_->ForwardBackward();
+        LOG(INFO) << "  iter_  Iteration: "<<iter_<<"-"<<i;
+        //" forward-backward time: "
+        //<< iter_timer.MilliSeconds() << " ms."; */
 
-      loss += net_->ForwardBackward();
-      LOG(INFO) << "  iter_  Iteration: "<<iter_<<"-"<<i;
-      //" forward-backward time: "
-      //<< iter_timer.MilliSeconds() << " ms."; */
-
-    }
-    loss /= param_.iter_size();
+      }
+      loss /= param_.iter_size();
     // average the loss across iterations for smoothed reporting
     UpdateSmoothedLoss(loss, start_iter, average_loss);
     if (display) {
@@ -297,6 +302,7 @@ void Solver<Dtype>::Step(int iters) {
         (iter_*param_.iter_size())<< " ms.";
     } */
   }
+  cudaProfilerStop();
  /*  total_timer.Stop();
  LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /stop_iter<< " ms.";
  */
