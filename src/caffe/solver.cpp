@@ -244,7 +244,7 @@ void Solver<Dtype>::Step(int iters) {
         iter_timer.Start(); */
         
         loss += net_->ForwardBackward();
-        LOG(INFO) << "  iter_  Iteration: "<<iter_<<"-"<<i;
+        //LOG(INFO) << "  iter_  Iteration: "<<iter_<<"-"<<i;
         //" forward-backward time: "
         //<< iter_timer.MilliSeconds() << " ms."; */
 
