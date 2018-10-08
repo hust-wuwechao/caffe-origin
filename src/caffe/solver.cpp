@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-
+#include<cudaProfiler.h>
 #include "boost/algorithm/string.hpp"
 #include "caffe/solver.hpp"
 #include "caffe/util/format.hpp"
@@ -302,7 +302,7 @@ void Solver<Dtype>::Step(int iters) {
         (iter_*param_.iter_size())<< " ms.";
     } */
   }
-  cudaProfilerStop();
+ cudaProfilerStop();
  /*  total_timer.Stop();
  LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /stop_iter<< " ms.";
  */
