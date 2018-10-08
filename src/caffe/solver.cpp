@@ -13,7 +13,8 @@
 namespace caffe {
 
 template<typename Dtype>
-void Solver<Dtype>::SetActionFunction(ActionCallback func) {
+void Solver<Dtype>::SetActionFunction(ActionCallback func) 
+{
   action_request_function_ = func;
 }
 
@@ -204,10 +205,10 @@ void Solver<Dtype>::Step(int iters) {
   int average_loss = this->param_.average_loss();
   losses_.clear();
   smoothed_loss_ = 0;
-  iteration_timer_.Start();
-  Timer total_timer;
-  total_timer.Start();
-  LOG(InFO)<<"stop_iter   "<<stop_iter;
+ // iteration_timer_.Start();
+  //Timer total_timer;
+ // total_timer.Start();
+  //LOG(InFO)<<"stop_iter   "<<stop_iter;
   cudaProfilerStart();
   while (iter_ < stop_iter)
   {
@@ -215,8 +216,10 @@ void Solver<Dtype>::Step(int iters) {
     // zero-init the params
     net_->ClearParamDiffs();
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
-        && (iter_ > 0 || param_.test_initialization())) {
-      if (Caffe::root_solver()) {
+        && (iter_ > 0 || param_.test_initialization())) 
+      {
+      if (Caffe::root_solver())
+      {
         TestAll();
       }
       if (requested_early_exit_) {
