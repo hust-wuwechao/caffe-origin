@@ -387,7 +387,7 @@ int time() {
     Timer iter_timer;
     iter_timer.Start();
     //forward_timer.Start();
-    for (int i = 0; i < layers.size(); ++i) 
+    /*for (int i = 0; i < layers.size(); ++i) 
     {
      // timer.Start();
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
@@ -401,7 +401,11 @@ int time() {
       layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
                           bottom_vecs[i]);
       //backward_time_per_layer[i] += timer.MicroSeconds();
-    }
+    }*/
+    caffe_net.Forward(&initial_loss);
+   //LOG(INFO) << "Initial loss: " << initial_loss;
+   //LOG(INFO) << "Performing Backward";
+    caffe_net.Backward();
     cudaDeviceSynchronize();
    // backward_time += backward_timer.MicroSeconds();
     LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
